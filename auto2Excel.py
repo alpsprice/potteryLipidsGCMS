@@ -4,7 +4,7 @@ import re
 import pandas as pd
 from openpyxl import Workbook
 
-#This file was first uploaded in Aug 15, 2025 by LHX from IVPP; Compound information in the list was based on DB-5ht;
+#This file was first uploaded on Aug 15, 2025 by LHX from IVPP; Under the MIT License;
 # ===== user config =====
 # Input your working folder (default folder is where you are placing this script)
 INPUT_FOLDER = os.path.dirname(os.path.realpath(__file__)) #也可以用绝对路径 r"D:\GCMS\BLL"
