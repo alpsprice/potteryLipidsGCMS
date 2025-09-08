@@ -11,18 +11,18 @@ INPUT_FOLDER = os.path.dirname(os.path.realpath(__file__)) #也可以用绝对�
 # 输出Excel文件名
 OUTPUT_FILE = "GCMS_Summary.xlsx"
 # 定义类目列（可扩展）
-CATEGORIES = ['SFA', 'USFA', 'ALK', 'Plant', 'Animal']
-# 定义分析规则（可扩展）, ratio_expected 指[目标的保留时间减 C16:0 的]除以 [C18:0 和 C16:0 的时间差]，名称可写多个，可用正则表达式
+CATEGORIES = ['SFA', 'UFA', 'DI', 'Plant', 'Animal']
+# 定义分析规则（可扩展）, ratio_expected 指[目标的保留时间减 C16:0 的]除以 [C18:0 和 C16:0 的时间差], 符合则大概率可信并自动标*号; 名称可写多个，可用正则表达式
 RULES = [
-    #名称前\后加^$是为了锁死全文匹配，比如C10和C16名称可局部匹配。问题来源是为了用正则式通配一些化合物（C18:1，就是它），求教更优方案ing
+    #名称前\后加^$是为了锁死全文匹配, 比如C10和C16名称可局部匹配. 问题来源是为了用正则式通配一些化合物, 求教更优方案ing
     #C10:0
     {
         'name': ['^Decanoic acid, methyl ester$'],
         'category': 'SFA',
         'value': 'C10:0',
         'si_threshold': 85,
-        'ratio_expected': -3.39,
-        'ratio_tolerance': 0.06
+        'ratio_expected': -3.5,
+        'ratio_tolerance': 0.09
     },
     #C11:0
     {
@@ -30,8 +30,8 @@ RULES = [
         'category': 'SFA',
         'value': 'C11:0',
         'si_threshold': 85,
-        'ratio_expected': -2.78,
-        'ratio_tolerance': 0.06
+        'ratio_expected': -2.89,
+        'ratio_tolerance': 0.08
     },
     #C12:0
     {
@@ -39,8 +39,8 @@ RULES = [
         'category': 'SFA',
         'value': 'C12:0',
         'si_threshold': 85,
-        'ratio_expected': -2.17,
-        'ratio_tolerance': 0.05
+        'ratio_expected': -2.23,
+        'ratio_tolerance': 0.07
     },
     #C13:0
     {
@@ -48,16 +48,16 @@ RULES = [
         'category': 'SFA',
         'value': 'C13:0',
         'si_threshold': 85,
-        'ratio_expected': -1.58,
+        'ratio_expected': -1.62,
         'ratio_tolerance': 0.05
     },
     #C14:0
     {
-        'name': ['^Methyl tetradecanoate$', 'Myristic acid, methyl ester', r'Tridecanoic acid.*, methyl ester'],
+        'name': ['^Methyl tetradecanoate$', '^Myristic acid, methyl ester$', r'Tridecanoic acid.*, methyl ester'],
         'category': 'SFA',
         'value': 'C14:0',
         'si_threshold': 85,
-        'ratio_expected': -1.05,
+        'ratio_expected': -1.08,
         'ratio_tolerance': 0.05
     },
     #C15:0
@@ -66,12 +66,12 @@ RULES = [
         'category': 'SFA',
         'value': 'C15:0',
         'si_threshold': 85,
-        'ratio_expected': -0.51,
+        'ratio_expected': -0.525,
         'ratio_tolerance': 0.06
     },
     #C16:0
     {
-        'name': ['Hexadecanoic acid, methyl ester'],
+        'name': ['^Hexadecanoic acid, methyl ester$'],
         'category': 'SFA',
         'value': 'C16:0',
         'si_threshold': 85,
@@ -80,16 +80,16 @@ RULES = [
     },
     #C17:0
     {
-        'name': ['Heptadecanoic acid, methyl ester'],
+        'name': ['^Heptadecanoic acid, methyl ester$'],
         'category': 'SFA',
         'value': 'C17:0',
         'si_threshold': 85,
         'ratio_expected': 0.51,
-        'ratio_tolerance': 0.05
+        'ratio_tolerance': 0.03
     },
     #C18:0
     {
-        'name': ['Methyl stearate'],
+        'name': ['^Methyl stearate$'],
         'category': 'SFA',
         'value': 'C18:0',
         'si_threshold': 85,
@@ -98,110 +98,218 @@ RULES = [
     },
     #C19:0
     {
-        'name': ['Nonadecanoic acid, methyl ester'],
+        'name': ['^Nonadecanoic acid, methyl ester$'],
         'category': 'SFA',
         'value': 'C19:0',
         'si_threshold': 85,
-        'ratio_expected': 1.54,
+        'ratio_expected': 1.5,
         'ratio_tolerance': 0.05
     },
-    #C20:0 - 合并为一个规则，支持多个名称
+    #C20:0
     {
-        'name': ['Arachidic acid, methyl ester', 'Eicosanoic acid, methyl ester', 'Methyl arachisate', r'Methyl .*-meth.*nonadecanoate'], 
+        'name': ['^Arachidic acid, methyl ester$', '^Eicosanoic acid, methyl ester$', '^Methyl arachisate$', r'Methyl .*-meth.*nonadecanoate'], 
         'category': 'SFA',
         'value': 'C20:0',
         'si_threshold': 85,
-        'ratio_expected': 1.93,
-        'ratio_tolerance': 0.05
+        'ratio_expected': 2.1,
+        'ratio_tolerance': 0.1
     },
     #C21:0
     {
-        'name': ['Heneicosanoic acid, methyl ester'],
+        'name': ['^Heneicosanoic acid, methyl ester$'],
         'category': 'SFA',
         'value': 'C21:0',
-        'si_threshold': 85,
-        'ratio_expected': 2.35,
-        'ratio_tolerance': 0.05
+        'si_threshold': 71,
+        'ratio_expected': 2.6,
+        'ratio_tolerance': 0.08
     },
     #C22:0
     {
-        'name': ['Docosanoic acid, methyl ester', r'Methyl .*-meth.*heneicosanoate'],
+        'name': ['^Docosanoic acid, methyl ester$', r'Methyl .*-meth.*heneicosanoate'],
         'category': 'SFA',
         'value': 'C22:0',
         'si_threshold': 85,
-        'ratio_expected': 2.77,
-        'ratio_tolerance': 0.05
+        'ratio_expected': 2.97,
+        'ratio_tolerance': 0.07
     },
     #C23:0
     {
-        'name': ['Tricosanoic acid, methyl ester', 'Methyl tricosanoate'],
+        'name': ['^Tricosanoic acid, methyl ester$', 'Methyl tricosanoate'],
         'category': 'SFA',
         'value': 'C23:0',
         'si_threshold': 85,
-        'ratio_expected': 3.26,
+        'ratio_expected': 3.4,
         'ratio_tolerance': 0.05
     },
     #C24:0
     {
-        'name': ['Tetracosanoic acid, methyl ester'],
+        'name': ['^Tetracosanoic acid, methyl ester$'],
         'category': 'SFA',
         'value': 'C24:0',
         'si_threshold': 85,
-        'ratio_expected': 3.62,
-        'ratio_tolerance': 0.05
+        'ratio_expected': 3.75,
+        'ratio_tolerance': 0.08
     },
     #C25:0
     {
-        'name': ['Pentacosanoic acid, methyl ester'],
+        'name': ['^Pentacosanoic acid, methyl ester$'],
         'category': 'SFA',
         'value': 'C25:0',
-        'si_threshold': 85,
-        'ratio_expected': 4.02,
-        'ratio_tolerance': 0.06
+        'si_threshold': 71,
+        'ratio_expected': 4.15,
+        'ratio_tolerance': 0.08
     },
-    #C26:0
+    #C26:0 27及更长链基本没可能自动识别出来，自己检查
     {
         'name': ['Hexacosanoic acid, methyl ester'],
         'category': 'SFA',
         'value': 'C26:0',
-        'si_threshold': 85,
-        'ratio_expected': 4.35,
-        'ratio_tolerance': 0.07
+        'si_threshold': 80,
+        'ratio_expected': 4.5,
+        'ratio_tolerance': 0.08
     },
     #C18:1
     {
         'name': [r'9-Octadecenoic acid.* methyl ester.*'],
-        'category': 'USFA',
+        'category': 'UFA',
         'value': 'C18:1',
-        'si_threshold': 85,
+        'si_threshold': 82,
         'ratio_expected': 0.9,
         'ratio_tolerance': 0.06
     },
+    #C20:1
+    {
+        'name': [r'cis-Methyl .*-eicosenoate', r'.*-Eicosenoic acid, methyl ester.*'],
+        'category': 'UFA',
+        'value': 'C20:1',
+        'si_threshold': 80,
+        'ratio_expected': 1.95,
+        'ratio_tolerance': 0.08
+    },
     #C22:1
     {
-        'name': ['13-Docosenoic acid, methyl ester', '13-Docosenoic acid, methyl ester, (Z)-', r'Methyl .*-docosenoate'],
-        'category': 'USFA',
+        'name': ['13-Docosenoic acid, methyl ester', r'Methyl .*-docosenoate'],
+        'category': 'UFA',
         'value': 'C22:1',
         'si_threshold': 85,
-        'ratio_expected': 2.3,
-        'ratio_tolerance': 0.05
+        'ratio_expected': 2.80,
+        'ratio_tolerance': 0.07
     },
     #C18:2
     {
         'name': [r'Methyl .*-trans,.*-cis-octadecadienoate'],
-        'category': 'USFA',
+        'category': 'UFA',
         'value': 'C18:2',
         'si_threshold': 85,
         'ratio_expected': 0.834,
         'ratio_tolerance': 0.06
     },
-    #Cholestanol 污染
+    #C4  DI类如果有，可以理论出现位置，或者在 SFA 后0.3 s内排查，人工确定具体有哪些
+    {
+        'name': ['^Butanedioic acid, dimethyl ester$'],
+        'category': 'DI',
+        'value': 'C4',
+        'si_threshold': 80,
+        'ratio_expected': -5.66,
+        'ratio_tolerance': 0.07
+    },
+    #C5
+    {
+        'name': ['^Pentanedioic acid, dimethyl ester$'],
+        'category': 'DI',
+        'value': 'C5',
+        'si_threshold': 80,
+        'ratio_expected': -4.8,
+        'ratio_tolerance': 0.09
+    },
+    #C6
+    {
+        'name': ['^Hexanedioic acid, dimethyl ester$'],
+        'category': 'DI',
+        'value': 'C6',
+        'si_threshold': 71,
+        'ratio_expected': -4,
+        'ratio_tolerance': 0.07
+    },
+    #C7
+    {
+        'name': [r'Hexanedioic acid .*-methyl.* dimethyl ester', 'Heptanedioic acid, dimethyl ester'],
+        'category': 'DI',
+        'value': 'C7',
+        'si_threshold': 80,
+        'ratio_expected': -3.38,
+        'ratio_tolerance': 0.06
+    },
+    #C8
+    {
+        'name': ['^Octanedioic acid, dimethyl ester$'],
+        'category': 'DI',
+        'value': 'C8',
+        'si_threshold': 85,
+        'ratio_expected': -2.63,
+        'ratio_tolerance': 0.06
+    },
+    #C9
+    {
+        'name': ['^Nonanedioic acid, dimethyl ester$'],
+        'category': 'DI',
+        'value': 'C9',
+        'si_threshold': 85,
+        'ratio_expected': -2.1,
+        'ratio_tolerance': 0.05
+    },
+    #C10
+    {
+        'name': ['^Decanedioic acid, dimethyl ester$'],
+        'category': 'DI',
+        'value': 'C10',
+        'si_threshold': 85,
+        'ratio_expected': -1.5,
+        'ratio_tolerance': 0.05
+    },
+    #C11
+    {
+        'name': ['^Undecanedioic acid, dimethyl ester$'],
+        'category': 'DI',
+        'value': 'C11',
+        'si_threshold': 85,
+        'ratio_expected': -0.93,
+        'ratio_tolerance': 0.05
+    },
+    #C12
+    {
+        'name': ['^Dodecanedioic acid, dimethyl ester$'],
+        'category': 'DI',
+        'value': 'C12',
+        'si_threshold': 85,
+        'ratio_expected': -0.39,
+        'ratio_tolerance': 0.05
+    },
+    #C13
+    {
+        'name': ['^Tridecanedioic acid, dimethyl ester$'],
+        'category': 'DI',
+        'value': 'C13',
+        'si_threshold': 85,
+        'ratio_expected': 0.14,
+        'ratio_tolerance': 0.2
+    },
+    #C14 这个自动基本识别不到
+    {
+        'name': ['^Dimethyl tetradecanedioate$', '^Tetradecanedioic acid, dimethyl ester$'],
+        'category': 'DI',
+        'value': 'C14',
+        'si_threshold': 75,
+        'ratio_expected': 0.635,
+        'ratio_tolerance': 0.06
+    },
+    #Cholestanol #未定
     {
         'name': ['Cholestanol'],
         'category': 'Animal',
         'value': 'Cholestanol',
         'si_threshold': 85,
-        'ratio_expected': 4.09,
+        'ratio_expected': 4.09, #未定
         'ratio_tolerance': 0.04
     },
     #Ergostanol
