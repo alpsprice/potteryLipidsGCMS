@@ -1,29 +1,53 @@
-MANY GCMS peak tables to ONE EXCEL
+# MANY GCMS peak tables to ONE EXCEL
 
-#Update logs:
-Aug 15, 2025: First upload.
-Sept 8, 2025: dicarboxylic acids were added, now this script can identify DI.
+这是一个 python 脚本，用一堆 GCMS 的自动峰识别结果生成 .xlsx 统计表
 
-#description: 
-python 脚本，用一堆色谱处理表生成 .xlsx 统计表; //This is a python script to merge numbers of GCMS output files into one .xlsx format compounds list, originally designed for GCMS data of pottery lipids
+This is a python script to merge numbers of GCMS output files into one .xlsx format compounds list, originally designed for GCMS data of pottery lipids
+
 如果用的是 DB-5Ht 的柱子，岛津分析软件 + nist 数据库，分析陶残化合物，本脚本的数据库可直接用。其他情况可能需要一定调整;
+
 本脚本基于岛津软件自动识别生成峰表和化合物名称，功能仅限于统计和制表。有些峰自动识别都认不出来/认错，本脚本救不了，哦。
+
 ratio_expected = [RTtime of Targeted compound - RTtime of C16:0] / [RTtime of C18:0 - RTtime of C16:0]，符合则加 * 号。相当于自动识别的保留指数。本脚本的 ratio_expected 目前综合了拟合曲线的理论 RTtime 和实测 RTtime；
+
 不会编程，代码全靠与 AI 的反复协商。欢迎留言反馈，查看留言不及时请见谅。
 
-#File for analysis：
-一整个文件夹的.txt 格式的，如下所示的处理结果数据块，可由岛津气相软件生成，允许一个 txt 包含多个数据块；//a folder full of .txt file of the data blocks of following format; Can be exported from Shimadzu GCMS software. One txt containing several blocks is acceptable.
+# Update logs:
 
+Aug, 2025: First upload.
+
+Sept, 2025: dicarboxylic acids were added, now this script can identify DI.
+
+Mar, 2026: now the script can calculate the ratio of areas of given peaks. And you can switch between inner and external library.
+
+# File for analysis：
+
+一整个文件夹的.txt 格式的，如下所示的处理结果数据块，可由岛津气相软件生成，允许一个 txt 包含多个数据块；
+
+a folder full of .txt file of the data blocks of following format; Can be exported from Shimadzu GCMS software. One txt containing several blocks is acceptable.
+
+# Sample of data block
 [Header]
+
 Data File Name	D:\Documents\250710\bigPot.qgd
+
 Output Date	2025/7/16
+
 Output Time	12:45:46
 
+
 [MC Peak Table]
-# of Peaks	4
+
+#of Peaks	4
+
 Mass	TIC
+
 Peak#	Ret.Time	Proc.From	Proc.To	Mass	Area	Height	A/H	Conc.	Mark	Name	Ret. Index	Area%	Height%	SI	CAS #
+
 1	16.366	16.314	16.594	TIC	2142910	299824	7.15	56.18	   	Hexadecanoic acid, methyl ester	1930	56.18	55.68	97	112-39-0
+
 2	16.628	16.594	16.721	TIC	129504	32851	3.94	3.40	 V 	Hexadecanoic acid, methyl ester	1958	3.40	6.10	90	112-39-0
+
 3	18.037	18.008	18.067	TIC	9958	6009	1.66	0.26	   	8-Octadecenoic acid, methyl ester	2110	0.26	1.12	91	2345-29-1
+
 4	18.263	18.202	18.600	TIC	1531948	199749	7.67	40.16	   	Methyl stearate	2138	40.16	37.10	97	112-61-8
