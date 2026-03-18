@@ -3,7 +3,7 @@ import glob
 import re
 import pandas as pd
 
-# version 3.1
+# version 4.0
 #This file was first uploaded on Aug 15, 2025 by LHX from IVPP; Under the MIT License;
 # ===== User Configuration =====
 # Working folder (default: script location)
@@ -15,7 +15,7 @@ CATEGORIES = ['SFA', 'UFA', 'DC', 'Plant', 'Animal']
 
 # ---------- Library switch ----------
 # False: use embedded RULES below; True: use external Excel library named lib2026.xlsx placed in the same folder as this script;
-USE_EXTERNAL_LIB = False
+USE_EXTERNAL_LIB = True
 EXTERNAL_LIB_FILE = "lib2026.xlsx"
 
 # ---------- Embedded rules (used when USE_EXTERNAL_LIB = False) ----------
@@ -281,7 +281,7 @@ RULES = [
         'category': 'DC',
         'value': 'C9',
         'si_threshold': 85,
-        'ratio_expected': -2.1,
+        'ratio_expected': -2.0,
         'ratio_tolerance': 0.1
     },
     #C10
@@ -329,14 +329,14 @@ RULES = [
         'ratio_expected': 0.635,
         'ratio_tolerance': 0.06
     },
-    #Cholestanol #未定
+    #Choles(blablabla) #未定, 若有请自己看有无一堆降解的
     {
-        'name': ['Cholestanol'],
+        'name': ['Chole'],
         'category': 'Animal',
-        'value': 'Cholestanol',
+        'value': 'Choles(blablabla)',
         'si_threshold': 85,
         'ratio_expected': 4.09, #未定
-        'ratio_tolerance': 0.04
+        'ratio_tolerance': 0.2
     },
     #Ergostanol
     {
@@ -352,21 +352,23 @@ RULES = [
         'name': ['.beta.-Sitosterol acetate'],
         'category': 'Plant',
         'value': 'b-Sitosterol acetate',
-        'si_threshold': 70,
-        'ratio_expected': 4.5,
-        'ratio_tolerance': 0.04
+        'si_threshold': 75,
+        'ratio_expected': 4.7,
+        'ratio_tolerance': 0.06
     },
 ]
 
-# ---------- Peak area ratio calculation rules (extendable) ----------
+# ---------- Peak area ratio/concentration calculation rules (extendable) ----------
 # Each rule is a dictionary with:
-#   value1 : value of the first compound (must match a 'value' in RULES)
-#   mode1  : 'both' (default, ±tolerance), 'gt' (greater than lower bound), or 'lt' (less than upper bound)
-#   value2 : value of the second compound
-#   mode2  : same as mode1
-#   output : output column name
+#   value1   : value of the first compound (must match a 'value' in RULES)
+#   mode1    : 'both' (default, ±tolerance), 'gt' (greater than lower bound), or 'lt' (less than upper bound)
+#   value2   : value of the second compound, delete this row if you wish to calculate the concentration of value1
+#   mode2    : same as mode1, see value2
+#   slope    : y=ax+b, input a here; delete this row if you wish to calculate ratio
+#   intercept: y=ax+b, input b here; see slope
+#   output   : output column name
 RATIO_CALCULATIONS = [
-    # C18:1 / C18:0
+    # C18:1 / C18:0  没啥用，代码都写了不能浪费
     {
         'value1': 'C18:1',
         'mode1': 'both',
@@ -374,13 +376,21 @@ RATIO_CALCULATIONS = [
         'mode2': 'both',
         'output': 'C18:1/C18:0'
     },
-    # A/P
+    # A/P 没啥用，代码都写了不能浪费
     {
         'value1': 'C9',
-        'mode1': 'both',
+        'mode1': 'gt',
         'value2': 'C16:0',
         'mode2': 'both',
         'output': 'A/P'
+    },
+    # 16酸浓度
+    {
+        'value1': 'C16:0',
+        'mode1': 'both',
+        'slope': 0.00000185958,
+        'intercept': 0,
+        'output': '16酸浓度'
     },
     # Add more rules as needed, e.g.:
     # {
@@ -464,8 +474,43 @@ def meets_ratio_condition(ratio, expected, tolerance, mode='both'):
     else:
         return True  # unknown mode, treat as no condition
 
-def parse_data_block(block, rules, value_to_rule, ratio_calcs):
-    """Parse a single data block and return dictionary with results"""
+def find_best_peak_by_area(peaks, name_patterns, si_threshold=None):
+    """
+    Find peak with largest area among those matching name_patterns.
+    Optionally filter by SI threshold.
+    Returns (best_peak, area) or (None, None) if no match.
+    """
+    candidates = []
+    for peak in peaks:
+        peak_name = peak.get('Name', '').strip()
+        if not name_matches(peak_name, name_patterns):
+            continue
+        if si_threshold is not None:
+            try:
+                si = int(peak.get('SI', 0))
+                if si < si_threshold:
+                    continue
+            except (ValueError, TypeError):
+                continue
+        try:
+            area = float(peak.get('Area', 0)) if peak.get('Area') not in (None, '') else 0
+            if area <= 0:
+                continue
+            rt = float(peak['Ret.Time'])
+            candidates.append((area, rt, peak))
+        except (ValueError, TypeError):
+            continue
+    if not candidates:
+        return None, None
+    # Select candidate with largest area
+    best = max(candidates, key=lambda x: x[0])
+    return best[2], best[0]  # peak, area
+
+def parse_data_block(block, rules, value_to_rule, ratio_calcs, ref_values):
+    """
+    Parse a single data block and return dictionary with results.
+    ref_values: list of value strings that are considered reference compounds (e.g., ['C16:0', 'C18:0'])
+    """
     result = {'Name': '', 'RefTimeDiff': None}
     for cat in CATEGORIES:
         result[cat] = []
@@ -510,36 +555,57 @@ def parse_data_block(block, rules, value_to_rule, ratio_calcs):
                 peak_data['Area'] = None
         peaks.append(peak_data)
 
-    # Find reference compounds (C16:0 and C18:0)
-    hexadecanoic = None
-    stearate = None
-    for peak in peaks:
-        name = peak.get('Name', '').strip()
-        if name == 'Hexadecanoic acid, methyl ester':
-            try:
-                hexadecanoic = {
-                    'rt': float(peak['Ret.Time']),
-                    'si': int(peak.get('SI', 0))
-                }
-            except (ValueError, TypeError):
-                pass
-        elif name == 'Methyl stearate':
-            try:
-                stearate = {
-                    'rt': float(peak['Ret.Time']),
-                    'si': int(peak.get('SI', 0))
-                }
-            except (ValueError, TypeError):
-                pass
+    # ----- Find reference compounds (C16:0 and C18:0) by area, using their rules -----
+    # Get rules for reference values (if exist)
+    ref_rules = {}
+    for val in ref_values:
+        rule = value_to_rule.get(val)
+        if rule:
+            ref_rules[val] = rule
+        else:
+            print(f"Warning: No rule found for reference value '{val}'. Using hardcoded name patterns.")
+            # Fallback hardcoded patterns (should match typical C16:0 and C18:0)
+            if val == 'C16:0':
+                ref_rules[val] = {'name': ['^Hexadecanoic acid, methyl ester$']}
+            elif val == 'C18:0':
+                ref_rules[val] = {'name': ['^Methyl stearate$']}
+            else:
+                ref_rules[val] = {'name': []}  # no pattern
+
+    # Find best peak for each reference
+    ref_peaks = {}  # value -> peak
+    ref_areas = {}  # value -> area
+    for val, rule in ref_rules.items():
+        best_peak, area = find_best_peak_by_area(peaks, rule['name'])
+        if best_peak:
+            ref_peaks[val] = best_peak
+            ref_areas[val] = area
+            # Automatically add reference value to its category (assume category from rule, fallback to first category if missing)
+            cat = rule.get('category', CATEGORIES[0]) if rule else CATEGORIES[0]
+            result[cat].append(val)  # add without asterisk
+        else:
+            ref_peaks[val] = None
+            ref_areas[val] = None
+
+    # Extract hexadecanoic (C16:0) and stearate (C18:0) peaks for time difference calculation
+    hexadecanoic = ref_peaks.get('C16:0')
+    stearate = ref_peaks.get('C18:0')
 
     # Calculate reference time difference
     ref_time_diff = None
     if hexadecanoic and stearate:
-        ref_time_diff = stearate['rt'] - hexadecanoic['rt']
-        result['RefTimeDiff'] = ref_time_diff
+        try:
+            rt_c16 = float(hexadecanoic['Ret.Time'])
+            rt_c18 = float(stearate['Ret.Time'])
+            ref_time_diff = rt_c18 - rt_c16
+            result['RefTimeDiff'] = ref_time_diff
+        except (ValueError, TypeError):
+            pass
 
-    # Apply classification rules (take peak with largest area for each rule)
+    # ----- Apply classification rules (skip reference values) -----
     for rule in rules:
+        if rule['value'] in ref_values:
+            continue  # skip reference compounds (already added manually)
         candidates = []
         for peak in peaks:
             peak_name = peak.get('Name', '').strip()
@@ -562,7 +628,7 @@ def parse_data_block(block, rules, value_to_rule, ratio_calcs):
         value = rule['value']
         # Check ratio condition for asterisk
         if ref_time_diff and hexadecanoic:
-            time_diff = rt - hexadecanoic['rt']
+            time_diff = rt - float(hexadecanoic['Ret.Time'])
             ratio = time_diff / ref_time_diff
             expected = rule['ratio_expected']
             tolerance = rule['ratio_tolerance']
@@ -570,10 +636,10 @@ def parse_data_block(block, rules, value_to_rule, ratio_calcs):
                 value += '*'
         result[rule['category']].append(value)
 
-    # Apply ratio calculations
+    # ----- Apply ratio/conc calculations (may use reference rules) -----
     if ref_time_diff and hexadecanoic:
         for calc in ratio_calcs:
-            # Process first compound
+            # Process first compound (always required)
             rule1 = value_to_rule.get(calc['value1'])
             if not rule1:
                 continue
@@ -590,49 +656,59 @@ def parse_data_block(block, rules, value_to_rule, ratio_calcs):
                     rt = float(peak['Ret.Time'])
                 except (ValueError, TypeError):
                     continue
-                time_diff = rt - hexadecanoic['rt']
+                time_diff = rt - float(hexadecanoic['Ret.Time'])
                 ratio = time_diff / ref_time_diff
-                # Apply mode-specific condition
                 mode = calc.get('mode1', 'both')
                 if not meets_ratio_condition(ratio, rule1['ratio_expected'], rule1['ratio_tolerance'], mode):
                     continue
                 candidates1.append((area, ratio))
             area1 = max([c[0] for c in candidates1]) if candidates1 else None
 
-            # Process second compound
-            rule2 = value_to_rule.get(calc['value2'])
-            if not rule2:
-                continue
-            candidates2 = []
-            for peak in peaks:
-                peak_name = peak.get('Name', '').strip()
-                if not name_matches(peak_name, rule2['name']):
+            # Determine if this is a ratio or concentration calculation
+            if 'value2' in calc and calc['value2'] is not None:
+                # Ratio calculation
+                rule2 = value_to_rule.get(calc['value2'])
+                if not rule2:
                     continue
-                try:
-                    si = int(peak.get('SI', 0))
-                    if si < rule2['si_threshold']:
+                candidates2 = []
+                for peak in peaks:
+                    peak_name = peak.get('Name', '').strip()
+                    if not name_matches(peak_name, rule2['name']):
                         continue
-                    area = float(peak.get('Area', 0)) if peak.get('Area') not in (None, '') else 0
-                    rt = float(peak['Ret.Time'])
-                except (ValueError, TypeError):
-                    continue
-                time_diff = rt - hexadecanoic['rt']
-                ratio = time_diff / ref_time_diff
-                mode = calc.get('mode2', 'both')
-                if not meets_ratio_condition(ratio, rule2['ratio_expected'], rule2['ratio_tolerance'], mode):
-                    continue
-                candidates2.append((area, ratio))
-            area2 = max([c[0] for c in candidates2]) if candidates2 else None
+                    try:
+                        si = int(peak.get('SI', 0))
+                        if si < rule2['si_threshold']:
+                            continue
+                        area = float(peak.get('Area', 0)) if peak.get('Area') not in (None, '') else 0
+                        rt = float(peak['Ret.Time'])
+                    except (ValueError, TypeError):
+                        continue
+                    time_diff = rt - float(hexadecanoic['Ret.Time'])
+                    ratio = time_diff / ref_time_diff
+                    mode = calc.get('mode2', 'both')
+                    if not meets_ratio_condition(ratio, rule2['ratio_expected'], rule2['ratio_tolerance'], mode):
+                        continue
+                    candidates2.append((area, ratio))
+                area2 = max([c[0] for c in candidates2]) if candidates2 else None
 
-            if area1 is not None and area2 is not None and area2 != 0:
-                result[calc['output']] = area1 / area2
+                if area1 is not None and area2 is not None and area2 != 0:
+                    result[calc['output']] = area1 / area2
+                else:
+                    result[calc['output']] = None
             else:
-                result[calc['output']] = None
+                # Concentration calculation
+                slope = calc.get('slope')
+                if slope is None:
+                    continue  # slope is required
+                intercept = calc.get('intercept', 0.0)
+                if area1 is not None:
+                    result[calc['output']] = slope * area1 + intercept
+                else:
+                    result[calc['output']] = None
     else:
-        # No reference, cannot calculate ratios
+        # No reference, cannot calculate ratios/concentrations
         for calc in ratio_calcs:
             result[calc['output']] = None
-
     return result
 
 def main():
@@ -652,6 +728,9 @@ def main():
     # Build mapping from value to rule (assuming each value is unique)
     value_to_rule = {rule['value']: rule for rule in rules if 'value' in rule}
 
+    # Define reference compound values (C16:0 and C18:0)
+    REFERENCE_VALUES = ['C16:0', 'C18:0']
+
     all_results = []
 
     # Process all .txt files in input folder
@@ -663,7 +742,7 @@ def main():
         blocks = re.split(r"\[Header\]", content)[1:]  # skip first empty element
 
         for block in blocks:
-            result = parse_data_block(block, rules, value_to_rule, RATIO_CALCULATIONS)
+            result = parse_data_block(block, rules, value_to_rule, RATIO_CALCULATIONS, REFERENCE_VALUES)
             # Convert lists to comma-separated strings
             for key in result:
                 if isinstance(result[key], list):
