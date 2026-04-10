@@ -4,6 +4,10 @@
 
 This is a python script to merge numbers of GCMS output files into one .xlsx format compounds list, originally designed for GCMS data of pottery lipids
 
+online video tutorial video (in Chinese): https://www.bilibili.com/video/BV1YePyzkELT/
+
+在线视频教程: https://www.bilibili.com/video/BV1YePyzkELT/
+
 如果用的是 DB-5Ht 的柱子，岛津分析软件 + nist 数据库，分析陶残化合物，本脚本的数据库可直接用。其他情况可能需要一定调整;
 
 本脚本基于岛津软件自动识别生成峰表和化合物名称，功能仅限于统计和制表。有些峰自动识别都认不出来/认错，本脚本救不了，哦。
@@ -18,13 +22,13 @@ Aug, 2025: First upload.
 
 Sept, 2025: dicarboxylic acids were added, now this script can identify DI.
 
-Mar, 2026: now the script can calculate the ratio of areas of given peaks. And you can switch between inner and external library.
+Mar, 2026: new features, now it can calculate the ratio of areas of 2 given peaks; calculate the concentration of certain compounds using user-defined y=ax+b; And switch between inner and external library.
 
 # File for analysis：
 
 一整个文件夹的.txt 格式的，如下所示的处理结果数据块，可由岛津气相软件生成，允许一个 txt 包含多个数据块；
 
-a folder full of .txt file of the data blocks of following format; Can be exported from Shimadzu GCMS software. One txt containing several blocks is acceptable.
+a folder full of .txt file of the data blocks of following format; Can be exported from Shimadzu GCMS software. One txt containing several blocks is acceptable. Or data with same column headers.
 
 # Sample of data block
 [Header]
