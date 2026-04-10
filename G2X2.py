@@ -3,7 +3,7 @@ import glob
 import re
 import pandas as pd
 
-# version 4.0
+# version 4.1
 #This file was first uploaded on Aug 15, 2025 by LHX from IVPP; Under the MIT License;
 # ===== User Configuration =====
 # Working folder (default: script location)
@@ -11,7 +11,7 @@ INPUT_FOLDER = os.path.dirname(os.path.realpath(__file__))
 # Output Excel file name
 OUTPUT_FILE = "GCMS_Summary.xlsx"
 # Category columns (you can add more categories)
-CATEGORIES = ['SFA', 'UFA', 'DC', 'Plant', 'Animal']
+CATEGORIES = ['SFA', 'UFA', 'DC', 'Plant', 'Animal', 'Alkane']
 
 # ---------- Library switch ----------
 # False: use embedded RULES below; True: use external Excel library named lib2026.xlsx placed in the same folder as this script;
@@ -369,14 +369,14 @@ RULES = [
 #   output   : output column name
 RATIO_CALCULATIONS = [
     # C18:1 / C18:0  没啥用，代码都写了不能浪费
-    {
-        'value1': 'C18:1',
-        'mode1': 'both',
-        'value2': 'C18:0',
-        'mode2': 'both',
-        'output': 'C18:1/C18:0'
-    },
-    # A/P 没啥用，代码都写了不能浪费
+    # {
+    #     'value1': 'C18:1',
+    #     'mode1': 'both',
+    #     'value2': 'C18:0',
+    #     'mode2': 'both',
+    #     'output': 'C18:1/C18:0'
+    # },
+    # A/P 没啥用, 测试代码
     {
         'value1': 'C9',
         'mode1': 'gt',
