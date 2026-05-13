@@ -4,17 +4,23 @@
 
 This is a python script to merge numbers of GCMS output files into one .xlsx format compounds list, originally designed for GCMS data of pottery lipids
 
-online video tutorial video (in Chinese): https://www.bilibili.com/video/BV1YePyzkELT/
-
 在线视频教程: https://www.bilibili.com/video/BV1YePyzkELT/
 
-如果用的是 DB-5Ht 的柱子，岛津分析软件 + nist 数据库，分析陶残化合物，本脚本的数据库可直接用。其他情况可能需要一定调整;
+online video tutorial video (in Chinese): https://www.bilibili.com/video/BV1YePyzkELT/
 
-本脚本基于岛津软件自动识别生成峰表和化合物名称，功能仅限于统计和制表。有些峰自动识别都认不出来/认错，本脚本救不了，哦。
+本脚本基于岛津软件自动识别生成峰表和化合物名称，功能仅限于统计和制表。自动识别都认不出来/认错的峰本脚本无能为力。如果用的是 DB-5Ht 的柱子，岛津分析软件 + nist 数据库，分析陶残化合物，本脚本的数据库可直接用。其他情况可能需要一定调整;
 
-ratio_expected = [RTtime of Targeted compound - RTtime of C16:0] / [RTtime of C18:0 - RTtime of C16:0]，符合则加 * 号。相当于自动识别的保留指数。本脚本的 ratio_expected 目前综合了拟合曲线的理论 RTtime 和实测 RTtime；
+This script relies on the automatic identification of peak tables and compounds by GC/MS software, it cannot handle peaks that the automatic identification fails to recognize or misidentifies. If a DB-5Ht column + Shimadzu analysis software + NIST database are used for organic residue analyse of ceramics, the script's database can be used directly.Other cases may require some adjustments;
 
-不会编程，代码全靠与 AI 的反复协商。欢迎留言反馈，查看留言不及时请见谅。
+ratio_expected = [RTtime of Targeted compound - RTtime of C16:0] / [RTtime of C18:0 - RTtime of C16:0]; if the calculated ratio matches, add an asterisk (*). It is equivalent to an automatically recognized retention index.
+
+本脚本的 ratio_expected 目前综合了拟合曲线的理论 RTtime 和实测 RTtime；
+
+The ratio_expected in this script currently combines both the theoretical RTtime from a fitted curve and the measured RTtime;
+
+欢迎留言反馈，查看留言不及时请见谅。
+
+Feedback is welcome, but please excuse any delay in replying to messages.
 
 # Update logs:
 
