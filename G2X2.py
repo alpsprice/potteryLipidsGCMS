@@ -3,8 +3,10 @@ import glob
 import re
 import pandas as pd
 
-# version 4.1
-#This file was first uploaded on Aug 15, 2025 by LHX from IVPP; Under the MIT License;
+# version 4.5
+# This file was first uploaded on Aug 15, 2025 by LHX from IVPP; Under the MIT License;
+# 视频教程: https://www.bilibili.com/video/BV1YePyzkELT/
+# online video tutorial video (in Chinese with English subtitle): https://www.bilibili.com/video/BV1YePyzkELT/
 # ===== User Configuration =====
 # Working folder (default: script location)
 INPUT_FOLDER = os.path.dirname(os.path.realpath(__file__))
@@ -20,9 +22,11 @@ EXTERNAL_LIB_FILE = "lib2026.xlsx"
 
 # ---------- Embedded rules (used when USE_EXTERNAL_LIB = False) ----------
 # Each rule contains: name(list), category, value, si_threshold, ratio_expected, ratio_tolerance
-# 分析规则（可扩展）, ratio_expected 指[目标的保留时间减 C16:0 的]除以 [C18:0 和 C16:0 的时间差], 符合则大概率可信并自动标*号; 名称可写多个，可用正则表达式
+# 内置库格式（可扩展）, ratio_expected 指[目标的保留时间减 C16:0 的]除以 [C18:0 和 C16:0 的时间差], 符合则大概率可信并自动标*号; 名称可写多个，可用正则表达式
+# Internal lib format: `ratio_expected` refers to ([the target's retention time minus that of C16:0]) divided by [the time difference between C18:0 and C16:0]. If it matches, it is likely to be credible and will be marked with an asterisk (*); multiple names can be specified, and regular expressions can be used.
 RULES = [
-    #名称前后加^和$是为了锁死全文匹配, 比如C10和C16名称可局部匹配. 问题来源是为了用正则式通配一些化合物, 求教更优方案ing
+    # 名称前后加^和$是为了锁死全文匹配, 比如C10和C16名称可局部匹配. 问题来源是为了用正则式通配一些化合物, 求教更优方案ing
+    # The ^ and $ before and after the name are used to enforce full-string matching; for example, names like C10 and C16 can be partially matched. The problem comes from wanting to use regex to wildcard-match some compounds.
     #C9:0
     {
         'name': ['^Nonanoic acid, methyl ester$'],
@@ -384,13 +388,21 @@ RATIO_CALCULATIONS = [
         'mode2': 'both',
         'output': 'A/P'
     },
-    # 16酸浓度
+    # 16酸浓度, IVPP 那台机子的标曲, 建于 Mar 2025
     {
         'value1': 'C16:0',
         'mode1': 'both',
         'slope': 0.00000185958,
         'intercept': 0,
         'output': '16酸浓度'
+    },
+    # 18酸浓度, IVPP 那台机子的标曲, 建于 Mar 2025
+    {
+        'value1': 'C18:0',
+        'mode1': 'both',
+        'slope': 0.00000194562,
+        'intercept': 0,
+        'output': '18酸浓度'
     },
     # Add more rules as needed, e.g.:
     # {
